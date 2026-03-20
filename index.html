@@ -399,29 +399,65 @@
     .btn-reset:hover { background: rgba(255,255,255,0.07); color: var(--text); }
 
     /* ─── PRINT ─── */
+    .chart-img { display: none; width: 100%; border-radius: 8px; }
+
     @media print {
-      body { background: #fff; color: #111; }
-      .bg-blobs { display: none; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { background: #fff !important; color: #111 !important; }
+      .bg-blobs { display: none !important; }
       #form-section { display: none !important; }
       #results { display: block !important; }
+
       .card {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        box-shadow: none;
+        background: #fff !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: none !important;
         break-inside: avoid;
+        page-break-inside: avoid;
+        margin-bottom: 16px;
       }
-      .hero-result .hero-num,
-      .header h1 {
-        -webkit-text-fill-color: #7c3aed;
-        background: none;
-        color: #7c3aed;
-      }
-      .pill-val, .m-val { color: #1e293b !important; }
-      .card-title, .pill-label, .m-label, .chart-label { color: #64748b !important; }
-      .alert { background: #f0fdf4; border-color: #86efac; color: #166534; }
+
+      /* Header */
+      .header-badge { background: #f3f0ff !important; border-color: #c4b5fd !important; color: #7c3aed !important; }
+      .header h1 { -webkit-text-fill-color: #7c3aed !important; }
+      .header p { color: #64748b !important; }
+
+      /* Big number */
+      .hero-result .hero-num { -webkit-text-fill-color: #7c3aed !important; font-size: 5rem !important; }
+      .hero-label, .hero-sub { color: #64748b !important; }
+
+      /* Pills */
+      .pill { background: #f8fafc !important; border-color: #e2e8f0 !important; }
+      .pill-label { color: #64748b !important; }
+      .pill-val { color: #1e293b !important; }
+      .clr-purple { color: #7c3aed !important; }
+      .clr-cyan   { color: #0891b2 !important; }
+      .clr-green  { color: #059669 !important; }
+      .clr-orange { color: #d97706 !important; }
+
+      /* Metrics */
+      .metric { background: #f8fafc !important; border-color: #e2e8f0 !important; }
+      .m-label { color: #64748b !important; }
+      .m-val   { color: #1e293b !important; }
+
+      /* Card labels */
+      .card-title, .chart-label { color: #64748b !important; }
+      .divider-label { color: #64748b !important; }
+
+      /* Alert */
+      .alert { background: #f0fdf4 !important; border-color: #86efac !important; color: #166534 !important; }
+      .alert strong { color: #14532d !important; }
+
+      /* Charts: hide canvas, show img snapshot */
+      canvas { display: none !important; }
+      .chart-img { display: block !important; }
+      .chart-container { height: auto !important; }
+
+      /* Hide buttons */
       .btn-pdf, .btn-reset { display: none !important; }
-      .header { color: #111; }
-      .header p { color: #64748b; }
+
+      /* Page */
+      .page { padding: 20px !important; max-width: 100% !important; }
     }
   </style>
 </head>
@@ -542,17 +578,19 @@
       <div class="chart-label">Воронка продаж</div>
       <div class="chart-container">
         <canvas id="funnelChart"></canvas>
+        <img class="chart-img" id="funnelImg" />
       </div>
       <div class="chart-spacer"></div>
       <div class="chart-label">Конверсии</div>
       <div class="chart-container">
         <canvas id="convChart"></canvas>
+        <img class="chart-img" id="convImg" />
       </div>
     </div>
 
     <!-- Actions -->
     <div class="card">
-      <button class="btn-pdf" onclick="window.print()">⬇&nbsp; Скачать PDF</button>
+      <button class="btn-pdf" onclick="printPDF()">⬇&nbsp; Скачать PDF</button>
       <button class="btn-reset" onclick="resetForm()">← Новый расчёт</button>
     </div>
 
@@ -695,6 +733,15 @@
       document.getElementById('results').style.display = '';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 50);
+  }
+
+  function printPDF() {
+    // Snapshot canvases → img so they appear in print
+    const fc = document.getElementById('funnelChart');
+    const cc = document.getElementById('convChart');
+    if (fc) document.getElementById('funnelImg').src = fc.toDataURL('image/png');
+    if (cc) document.getElementById('convImg').src  = cc.toDataURL('image/png');
+    window.print();
   }
 
   // Shake animation
