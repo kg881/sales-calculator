@@ -492,11 +492,11 @@
           <input type="number" id="qualLeads" placeholder="81" min="0" />
         </div>
         <div class="field">
-          <label>Общая выручка, ₽</label>
+          <label>Общая выручка, $</label>
           <input type="number" id="revenue" placeholder="103595" min="0" />
         </div>
         <div class="field">
-          <label>Средний чек, ₽</label>
+          <label>Средний чек, $</label>
           <input type="number" id="avgDeal" placeholder="1726" min="0" />
         </div>
         <div class="field">
@@ -512,7 +512,7 @@
       <div class="divider-label">Цель</div>
 
       <div class="field full">
-        <label>🎯 Желаемая выручка, ₽</label>
+        <label>🎯 Желаемая выручка, $</label>
         <input type="number" id="targetRevenue" class="target" placeholder="25 000" min="0" />
       </div>
 
@@ -634,7 +634,7 @@
     set('r-reqDeals', reqDeals);
 
     document.getElementById('r-summary').innerHTML =
-      `✅ Для достижения <strong>${fmt(targetRev)} ₽</strong> нужно привлечь <strong>${reqTotal} лидов</strong> (из них <strong>${reqQual} целевых</strong>), выдать <strong>${reqTrials} триалов</strong>. Ожидаемое время — <strong>${cycledays} дней</strong>.`;
+      `✅ Для достижения <strong>${fmt(targetRev)} $</strong> нужно привлечь <strong>${reqTotal} лидов</strong> (из них <strong>${reqQual} целевых</strong>), выдать <strong>${reqTrials} триалов</strong>. Ожидаемое время — <strong>${cycledays} дней</strong>.`;
 
     drawCharts(reqTotal, reqQual, reqTrials, reqDeals, convToPayment, convToTrial);
 
