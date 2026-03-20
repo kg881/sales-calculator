@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sales Reverse Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #030712;
+      --surface: rgba(255,255,255,0.04);
+      --surface-hover: rgba(255,255,255,0.07);
+      --border: rgba(255,255,255,0.08);
+      --border-focus: rgba(124,58,237,0.6);
+      --text: #f1f5f9;
+      --muted: #64748b;
+      --purple: #7c3aed;
+      --purple-light: #a78bfa;
+      --cyan: #06b6d4;
+      --green: #10b981;
+      --orange: #f59e0b;
+      --pink: #ec4899;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── ANIMATED BACKGROUND ─── */
+    .bg-blobs {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.18;
+      animation: float 18s ease-in-out infinite;
+    }
+    .blob-1 { width: 600px; height: 600px; background: #7c3aed; top: -200px; left: -100px; animation-delay: 0s; }
+    .blob-2 { width: 500px; height: 500px; background: #06b6d4; top: 40%; right: -150px; animation-delay: -6s; }
+    .blob-3 { width: 400px; height: 400px; background: #10b981; bottom: -100px; left: 30%; animation-delay: -12s; }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(40px, -30px) scale(1.05); }
+      66% { transform: translate(-20px, 20px) scale(0.97); }
+    }
+
+    /* ─── LAYOUT ─── */
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 60px 20px 80px;
+    }
+
+    /* ─── HEADER ─── */
+    .header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(124,58,237,0.15);
+      border: 1px solid rgba(124,58,237,0.3);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--purple-light);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .header h1 {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 900;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #fff 0%, #a78bfa 50%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header p {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 400;
+    }
+
+    /* ─── CARD ─── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      transition: border-color 0.3s;
+    }
+    .card:hover { border-color: rgba(255,255,255,0.12); }
+
+    .card-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      margin-bottom: 24px;
+    }
+
+    /* ─── FORM ─── */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 500px) { .grid { grid-template-columns: 1fr; } }
+
+    .field { display: flex; flex-direction: column; gap: 8px; }
+    .field.full { grid-column: 1 / -1; }
+
+    .field label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+    }
+
+    .field input {
+      background: rgba(255,255,255,0.05);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 13px 16px;
+      font-size: 0.95rem;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+    .field input::placeholder { color: #374151; }
+    .field input:focus {
+      border-color: var(--border-focus);
+      background: rgba(124,58,237,0.06);
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
+    }
+    .field input.target {
+      border-color: rgba(124,58,237,0.4);
+      background: rgba(124,58,237,0.08);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--purple-light);
+    }
+    .field input.target:focus {
+      border-color: var(--purple);
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
+    }
+
+    .divider-label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 24px 0;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .divider-label::before,
+    .divider-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ─── BUTTON ─── */
+    .btn-calc {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #7c3aed, #06b6d4);
+      border: none;
+      border-radius: 14px;
+      color: white;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      position: relative;
+      overflow: hidden;
+      transition: opacity 0.2s, transform 0.15s;
+      letter-spacing: 0.3px;
+    }
+    .btn-calc::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .btn-calc:hover { opacity: 0.92; transform: translateY(-1px); }
+    .btn-calc:hover::before { opacity: 1; }
+    .btn-calc:active { transform: translateY(0); }
+
+    /* ─── RESULTS ─── */
+    #results { display: none; }
+    #results.show {
+      display: block;
+      animation: fadeUp 0.5s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Hero number */
+    .hero-result {
+      text-align: center;
+      padding: 16px 0 24px;
+    }
+    .hero-result .hero-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .hero-result .hero-num {
+      font-size: 7rem;
+      font-weight: 900;
+      line-height: 1;
+      background: linear-gradient(135deg, #a78bfa, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -4px;
+    }
+    .hero-result .hero-sub {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* Stat pills row */
+    .pills {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 24px;
+    }
+    @media (max-width: 480px) { .pills { grid-template-columns: 1fr 1fr; } }
+
+    .pill {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 14px;
+      text-align: center;
+      transition: background 0.2s;
+    }
+    .pill:hover { background: rgba(255,255,255,0.07); }
+    .pill .pill-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .pill .pill-val {
+      font-size: 1.7rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    /* Metrics grid */
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .metric {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .metric .m-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+    }
+    .metric .m-val {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    /* Colors */
+    .clr-purple { color: var(--purple-light); }
+    .clr-cyan   { color: var(--cyan); }
+    .clr-green  { color: var(--green); }
+    .clr-orange { color: var(--orange); }
+    .clr-pink   { color: var(--pink); }
+
+    /* Success alert */
+    .alert {
+      background: rgba(16,185,129,0.08);
+      border: 1px solid rgba(16,185,129,0.2);
+      border-radius: 14px;
+      padding: 16px 20px;
+      font-size: 0.9rem;
+      color: #6ee7b7;
+      line-height: 1.6;
+      margin-top: 20px;
+    }
+    .alert strong { color: #a7f3d0; }
+
+    /* Charts */
+    .chart-container {
+      position: relative;
+      height: 200px;
+      margin-top: 4px;
+    }
+    .chart-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .chart-spacer { height: 1px; background: var(--border); margin: 28px 0; }
+
+    /* PDF & reset buttons */
+    .btn-pdf {
+      width: 100%;
+      padding: 15px;
+      background: transparent;
+      border: 1.5px solid rgba(124,58,237,0.5);
+      border-radius: 14px;
+      color: var(--purple-light);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+      letter-spacing: 0.3px;
+    }
+    .btn-pdf:hover {
+      background: rgba(124,58,237,0.12);
+      border-color: var(--purple);
+    }
+    .btn-reset {
+      width: 100%;
+      margin-top: 10px;
+      padding: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-reset:hover { background: rgba(255,255,255,0.07); color: var(--text); }
+
+    /* ─── PRINT ─── */
+    @media print {
+      body { background: #fff; color: #111; }
+      .bg-blobs { display: none; }
+      #form-section { display: none !important; }
+      #results { display: block !important; }
+      .card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        box-shadow: none;
+        break-inside: avoid;
+      }
+      .hero-result .hero-num,
+      .header h1 {
+        -webkit-text-fill-color: #7c3aed;
+        background: none;
+        color: #7c3aed;
+      }
+      .pill-val, .m-val { color: #1e293b !important; }
+      .card-title, .pill-label, .m-label, .chart-label { color: #64748b !important; }
+      .alert { background: #f0fdf4; border-color: #86efac; color: #166534; }
+      .btn-pdf, .btn-reset { display: none !important; }
+      .header { color: #111; }
+      .header p { color: #64748b; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-blobs">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-badge">📊 Sales Tool</div>
+    <h1>Sales Reverse<br/>Calculator</h1>
+    <p>Введи данные — узнай сколько лидов нужно для цели</p>
+  </div>
+
+  <!-- FORM -->
+  <div id="form-section">
+    <div class="card">
+      <div class="card-title">Исторические данные</div>
+      <div class="grid">
+        <div class="field">
+          <label>Всего лидов</label>
+          <input type="number" id="totalLeads" placeholder="366" min="0" />
+        </div>
+        <div class="field">
+          <label>Целевых лидов</label>
+          <input type="number" id="qualLeads" placeholder="81" min="0" />
+        </div>
+        <div class="field">
+          <label>Общая выручка, ₽</label>
+          <input type="number" id="revenue" placeholder="103595" min="0" />
+        </div>
+        <div class="field">
+          <label>Средний чек, ₽</label>
+          <input type="number" id="avgDeal" placeholder="1726" min="0" />
+        </div>
+        <div class="field">
+          <label>Цикл сделки, дней</label>
+          <input type="number" id="cycledays" placeholder="30" min="0" />
+        </div>
+        <div class="field">
+          <label>Выдано триалов</label>
+          <input type="number" id="trials" placeholder="125" min="0" />
+        </div>
+      </div>
+
+      <div class="divider-label">Цель</div>
+
+      <div class="field full">
+        <label>🎯 Желаемая выручка, ₽</label>
+        <input type="number" id="targetRevenue" class="target" placeholder="25 000" min="0" />
+      </div>
+
+      <button class="btn-calc" onclick="calculate()">Рассчитать →</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+
+    <!-- Main result -->
+    <div class="card">
+      <div class="card-title">Результат</div>
+      <div class="hero-result">
+        <div class="hero-label">Всего лидов нужно</div>
+        <div class="hero-num" id="r-total">0</div>
+        <div class="hero-sub">лидов для достижения цели</div>
+      </div>
+
+      <div class="pills">
+        <div class="pill">
+          <div class="pill-label">Целевых лидов</div>
+          <div class="pill-val clr-purple" id="r-qual">—</div>
+        </div>
+        <div class="pill">
+          <div class="pill-label">Триалов</div>
+          <div class="pill-val clr-orange" id="r-trials">—</div>
+        </div>
+        <div class="pill">
+          <div class="pill-label">Времени</div>
+          <div class="pill-val clr-green" id="r-time">—</div>
+        </div>
+      </div>
+
+      <div class="alert" id="r-summary"></div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="card">
+      <div class="card-title">Промежуточные метрики</div>
+      <div class="metrics">
+        <div class="metric">
+          <span class="m-label">Закрытых сделок</span>
+          <span class="m-val clr-cyan" id="r-deals">—</span>
+        </div>
+        <div class="metric">
+          <span class="m-label">Конверсия в оплату</span>
+          <span class="m-val clr-green" id="r-convPay">—</span>
+        </div>
+        <div class="metric">
+          <span class="m-label">Конверсия в триал</span>
+          <span class="m-val clr-orange" id="r-convTrial">—</span>
+        </div>
+        <div class="metric">
+          <span class="m-label">Требуемых сделок</span>
+          <span class="m-val clr-purple" id="r-reqDeals">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="card">
+      <div class="chart-label">Воронка продаж</div>
+      <div class="chart-container">
+        <canvas id="funnelChart"></canvas>
+      </div>
+      <div class="chart-spacer"></div>
+      <div class="chart-label">Конверсии</div>
+      <div class="chart-container">
+        <canvas id="convChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="card">
+      <button class="btn-pdf" onclick="window.print()">⬇&nbsp; Скачать PDF</button>
+      <button class="btn-reset" onclick="resetForm()">← Новый расчёт</button>
+    </div>
+
+  </div><!-- /results -->
+</div><!-- /page -->
+
+<script>
+  let funnelChart = null, convChart = null;
+
+  function calculate() {
+    const v = id => parseFloat(document.getElementById(id).value);
+    const totalLeads = v('totalLeads'), qualLeads = v('qualLeads'),
+          revenue = v('revenue'), avgDeal = v('avgDeal'),
+          cycledays = v('cycledays'), trials = v('trials'),
+          targetRev = v('targetRevenue');
+
+    if ([totalLeads,qualLeads,revenue,avgDeal,cycledays,trials,targetRev].some(isNaN)) {
+      shake(document.querySelector('.btn-calc'));
+      return;
+    }
+
+    const closedDeals    = revenue / avgDeal;
+    const convToPayment  = (closedDeals / qualLeads) * 100;
+    const convToTrial    = (trials / totalLeads) * 100;
+    const revenuePerLead = revenue / totalLeads;
+
+    const reqTotal  = Math.ceil(targetRev / revenuePerLead);
+    const qualRate  = qualLeads / totalLeads;
+    const reqQual   = Math.round(reqTotal * qualRate);
+    const reqTrials = Math.round(reqQual * (trials / totalLeads));
+    const reqDeals  = Math.ceil(targetRev / avgDeal);
+
+    // Fill values
+    animateNum('r-total', reqTotal);
+    set('r-qual', reqQual);
+    set('r-trials', reqTrials);
+    set('r-time', cycledays + ' дн.');
+    set('r-deals', closedDeals.toFixed(2));
+    set('r-convPay', convToPayment.toFixed(2) + '%');
+    set('r-convTrial', convToTrial.toFixed(2) + '%');
+    set('r-reqDeals', reqDeals);
+
+    document.getElementById('r-summary').innerHTML =
+      `✅ Для достижения <strong>${fmt(targetRev)} ₽</strong> нужно привлечь <strong>${reqTotal} лидов</strong> (из них <strong>${reqQual} целевых</strong>), выдать <strong>${reqTrials} триалов</strong>. Ожидаемое время — <strong>${cycledays} дней</strong>.`;
+
+    drawCharts(reqTotal, reqQual, reqTrials, reqDeals, convToPayment, convToTrial);
+
+    const results = document.getElementById('results');
+    results.classList.add('show');
+    setTimeout(() => results.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  }
+
+  function drawCharts(total, qual, tr, deals, pay, trial) {
+    if (funnelChart) funnelChart.destroy();
+    if (convChart) convChart.destroy();
+
+    Chart.defaults.color = '#64748b';
+    Chart.defaults.font.family = 'Inter';
+
+    // Funnel bar
+    funnelChart = new Chart(document.getElementById('funnelChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Лиды', 'Целевые', 'Триалы', 'Сделки'],
+        datasets: [{
+          data: [total, qual, tr, deals],
+          backgroundColor: ['rgba(124,58,237,0.7)','rgba(167,139,250,0.7)','rgba(245,158,11,0.7)','rgba(6,182,212,0.7)'],
+          borderColor: ['#7c3aed','#a78bfa','#f59e0b','#06b6d4'],
+          borderWidth: 1.5,
+          borderRadius: 8,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } },
+          y: { grid: { display: false }, ticks: { color: '#94a3b8', font: { weight: '600' } } }
+        }
+      }
+    });
+
+    // Doughnut
+    convChart = new Chart(document.getElementById('convChart'), {
+      type: 'doughnut',
+      data: {
+        labels: [`Конверсия в оплату: ${pay.toFixed(2)}%`, `Конверсия в триал: ${trial.toFixed(2)}%`],
+        datasets: [{
+          data: [pay, trial],
+          backgroundColor: ['rgba(16,185,129,0.8)', 'rgba(124,58,237,0.8)'],
+          borderColor: ['#10b981','#7c3aed'],
+          borderWidth: 1.5,
+          hoverOffset: 10,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: '#94a3b8', font: { size: 12, weight: '500' }, padding: 20, usePointStyle: true }
+          }
+        }
+      }
+    });
+  }
+
+  // Animate big number
+  function animateNum(id, target) {
+    const el = document.getElementById(id);
+    const duration = 900, start = performance.now();
+    function step(now) {
+      const p = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(ease * target);
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function set(id, val) { document.getElementById(id).textContent = val; }
+  function fmt(n) { return new Intl.NumberFormat('ru-RU').format(n); }
+
+  function shake(el) {
+    el.style.animation = 'none';
+    el.offsetHeight;
+    el.style.animation = 'shake 0.4s ease';
+    setTimeout(() => el.style.animation = '', 400);
+  }
+
+  function resetForm() {
+    document.getElementById('results').classList.remove('show');
+    document.getElementById('results').style.display = 'none';
+    setTimeout(() => {
+      document.getElementById('results').style.display = '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 50);
+  }
+
+  // Shake animation
+  const style = document.createElement('style');
+  style.textContent = `@keyframes shake {
+    0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)}
+  }`;
+  document.head.appendChild(style);
+</script>
+</body>
+</html>
